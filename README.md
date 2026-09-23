@@ -1,15 +1,183 @@
-# wifi.ctrl
+:root {
+  --glow: rgba(184, 229, 109, 0.2);
+}
 
-Static PWA dashboard untuk akses cepat ke router dan access point lokal melalui GitHub Pages.
+body {
+  isolation: isolate;
+}
 
-## Embed atau halaman baru?
+.aurora {
+  position: fixed;
+  width: 42vw;
+  height: 42vw;
+  filter: blur(75px);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -2;
+  opacity: 0.22;
+  animation: drift 16s ease-in-out infinite alternate;
+}
 
-Dashboard menampilkan perangkat dalam satu halaman, tetapi tombol interface membuka panel admin router secara langsung. Embed memakai iframe tidak selalu dapat bekerja karena router dapat menolak iframe melalui `X-Frame-Options`/CSP, dan HTTPS GitHub Pages dapat memblokir konten HTTP sebagai mixed content. Karena itu direct open adalah fallback paling stabil.
+.aurora-a {
+  background: #a8e063;
+  top: -22vw;
+  right: -10vw;
+}
 
-## GitHub Pages
+.aurora-b {
+  background: #315c62;
+  bottom: -25vw;
+  left: -12vw;
+  animation-delay: -7s;
+}
 
-Buka **Settings → Pages**, pilih **Deploy from a branch**, branch `main`, folder `/ (root)`. URL: `https://dirzzr.github.io/wifi-ctrl/`.
+.grid-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  opacity: 0.16;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(184, 229, 109, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(184, 229, 109, 0.06) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+  animation: gridMove 24s linear infinite;
+}
 
-## Kredensial
+.device-card {
+  position: relative;
+  overflow: hidden;
+}
 
-Kredensial default ditampilkan di dashboard sesuai konfigurasi jaringan pribadi. Karena repository ini publik, siapa pun yang dapat melihat source GitHub juga dapat membacanya. Ganti password router jika project akan dibagikan atau dibuat benar-benar privat.
+.device-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(115deg, transparent 30%, rgba(184, 229, 109, 0.18), transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.8s ease;
+  pointer-events: none;
+}
+
+.device-card:hover::before {
+  transform: translateX(120%);
+}
+
+.device-card::after {
+  content: "";
+  position: absolute;
+  right: -35px;
+  top: -35px;
+  width: 110px;
+  height: 110px;
+  border: 1px solid rgba(184, 229, 109, 0.14);
+  border-radius: 50%;
+  box-shadow: 0 0 0 14px rgba(184, 229, 109, 0.035), 0 0 0 29px rgba(184, 229, 109, 0.02);
+  pointer-events: none;
+}
+
+.device-card[data-tilt] {
+  transform-style: preserve-3d;
+}
+
+.device-card[data-tilt]:hover {
+  transform: perspective(900px) rotateX(1deg) rotateY(-1deg) translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24), 0 0 35px var(--glow);
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: reveal 0.8s cubic-bezier(0.2, 0.75, 0.25, 1) forwards;
+}
+
+.hero[data-reveal] { animation-delay: 0.08s; }
+[data-reveal]:nth-of-type(2) { animation-delay: 0.12s; }
+.access-panel[data-reveal] { animation-delay: 0.22s; }
+
+.brand-mark i {
+  animation: signal 1.8s ease-in-out infinite;
+}
+
+.brand-mark i:nth-child(2) { animation-delay: 0.18s; }
+.brand-mark i:nth-child(3) { animation-delay: 0.36s; }
+
+.pulse,
+.live-dot {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+.open-link {
+  position: relative;
+}
+
+.open-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 18px;
+  bottom: -5px;
+  height: 1px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.open-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.outline-button {
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.outline-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(184, 229, 109, 0.1);
+}
+
+@keyframes drift {
+  to { transform: translate(8vw, 5vh) scale(1.15); }
+}
+
+@keyframes gridMove {
+  to { background-position: 72px 72px; }
+}
+
+@keyframes reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes signal {
+  0%, 100% {
+    transform: scaleY(0.65);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 0 rgba(184, 229, 109, 0.35);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 7px rgba(184, 229, 109, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
