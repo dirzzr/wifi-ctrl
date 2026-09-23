@@ -1,0 +1,10 @@
+{
+  "name": "wifi.ctrl — local network cockpit",
+  "short_name": "wifi.ctrl",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "description": "Private control center untuk router dan access point lokal.",
+  "icons": []
+}
