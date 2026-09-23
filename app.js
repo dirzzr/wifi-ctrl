@@ -1,87 +1,101 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#090b10">
-  <meta name="description" content="Private control center untuk router dan access point lokal.">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23090b10'/%3E%3Cpath d='M22 40c16-16 40-16 56 0M31 51c11-11 27-11 38 0M42 63c5-5 11-5 16 0M50 76h.01' fill='none' stroke='%23a8e063' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="effects.css">
-  <title>wifi.ctrl — local network cockpit</title>
-</head>
-<body>
-  <div class="aurora aurora-a"></div>
-  <div class="aurora aurora-b"></div>
-  <div class="grid-glow"></div>
-  <div class="noise"></div>
+const devices = {
+  router1: { name: 'Rabit CPE XR', ip: '192.168.100.1', user: 'admin', pass: 'admin' },
+  router2: { name: 'FiberHome HG6145D2', ip: '192.168.100.2', user: 'admin', pass: '%0|F?H@f!berhO3e' }
+};
 
-  <main class="shell">
-    <header class="topbar" data-reveal>
-      <a class="brand" href="./" aria-label="wifi.ctrl home"><span class="brand-mark"><i></i><i></i><i></i></span><span>wifi<span class="muted">.</span>ctrl</span></a>
-      <div class="top-actions">
-        <span class="secure-pill"><span class="pulse"></span> local only</span>
-        <button class="icon-button" id="installBtn" hidden aria-label="Install aplikasi">↥</button>
-        <button class="icon-button" id="settingsBtn" aria-label="Buka pengaturan">⌘</button>
-      </div>
-    </header>
+const $ = (selector) => document.querySelector(selector);
+const toast = $('#toast');
+let deferredPrompt;
 
-    <section class="hero" data-reveal>
-      <div class="eyebrow">NETWORK COCKPIT <span>—</span> 01</div>
-      <h1>Everything connected.<br><em>Nothing complicated.</em></h1>
-      <p class="hero-copy">Satu tempat yang tenang untuk mengakses, memantau, dan mengelola perangkat jaringan di rumah.</p>
-      <div class="hero-meta"><span class="live-dot"></span><span id="clock">LOCAL TIME</span><span class="divider"></span><span>2 DEVICES</span></div>
-    </section>
+function defaultCredentials() {
+  return Object.fromEntries(Object.entries(devices).map(([key, device]) => [key, { user: device.user, pass: device.pass }]));
+}
 
-    <section class="device-grid" aria-label="Perangkat jaringan">
-      <article class="device-card primary" data-reveal data-tilt>
-        <div class="card-head"><div class="device-icon cellular"><span></span></div><span class="status"><i></i> reachable</span></div>
-        <div class="device-content"><div class="device-number">01 / LTE GATEWAY</div><h2>Rabit CPE XR</h2><p class="role">Penangkap sinyal 4G LTE · Indosat HiFi Air</p><div class="address"><span>192.168.100.1</span><button class="copy-icon" data-copy="192.168.100.1" aria-label="Salin alamat IP">⧉</button></div></div>
-        <div class="card-footer"><span class="connection"><b></b> primary uplink</span><a class="open-link" href="http://192.168.100.1" target="_blank" rel="noopener">Open interface <span>↗</span></a></div>
-      </article>
+function credentials() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('wifiCtrlCredentials'));
+    return saved || defaultCredentials();
+  } catch {
+    return defaultCredentials();
+  }
+}
 
-      <article class="device-card" data-reveal data-tilt>
-        <div class="card-head"><div class="device-icon wifi"><span></span></div><span class="status"><i></i> reachable</span></div>
-        <div class="device-content"><div class="device-number">02 / ACCESS POINT</div><h2>FiberHome HG6145D2</h2><p class="role">Penerus internet · dual-band 2.4 / 5 GHz</p><div class="address"><span>192.168.100.2</span><button class="copy-icon" data-copy="192.168.100.2" aria-label="Salin alamat IP">⧉</button></div></div>
-        <div class="card-footer"><span class="connection"><b></b> wireless bridge</span><a class="open-link" href="http://192.168.100.2" target="_blank" rel="noopener">Open interface <span>↗</span></a></div>
-      </article>
-    </section>
+function notify(message = 'Copied to clipboard') {
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
 
-    <section class="access-panel" data-reveal>
-      <div>
-        <div class="eyebrow">QUICK ACCESS</div>
-        <h3>Credentials vault</h3>
-        <p>Username dan password perangkat siap disalin dari dashboard ini.</p>
-      </div>
-      <button class="outline-button" id="vaultBtn">View credentials <span>→</span></button>
-    </section>
+async function copy(value) {
+  if (!value) return notify('Belum diisi');
+  try {
+    await navigator.clipboard.writeText(value);
+    notify();
+  } catch {
+    notify('Copy tidak tersedia');
+  }
+}
 
-    <footer><span>WIFI.CTRL / 2026</span><span>BUILT FOR YOUR LOCAL NETWORK <b>✦</b></span></footer>
-  </main>
+function renderVault() {
+  const data = credentials();
+  $('#credentialList').innerHTML = Object.entries(devices).map(([key, device]) => `
+    <div class="credential">
+      <div class="credential-name">${device.name}</div>
+      <label>Username</label>
+      <div class="credential-value"><span>${data[key]?.user || 'Not configured'}</span><button type="button" data-value="${data[key]?.user || ''}">copy</button></div>
+      <label style="margin-top:13px">Password</label>
+      <div class="credential-value"><span>${data[key]?.pass || 'Not configured'}</span><button type="button" data-value="${data[key]?.pass || ''}">copy</button></div>
+    </div>`).join('');
+  $('#credentialList').querySelectorAll('button').forEach((button) => button.addEventListener('click', () => copy(button.dataset.value)));
+}
 
-  <dialog id="vaultDialog">
-    <div class="dialog-head">
-      <div><div class="eyebrow">PRIVATE VAULT</div><h2>Access details</h2></div>
-      <button class="close" data-close>×</button>
-    </div>
-    <p class="dialog-note">Kredensial ini tersedia di dashboard untuk akses cepat. Jangan bagikan URL aplikasi atau repository ke publik.</p>
-    <div id="credentialList"></div>
-    <button class="outline-button full" id="editCredentials">Edit local credentials <span>→</span></button>
-  </dialog>
+function renderForm() {
+  const data = credentials();
+  $('#formFields').innerHTML = Object.entries(devices).map(([key, device]) => `
+    <div class="credential">
+      <div class="credential-name">${device.name} <small>${device.ip}</small></div>
+      <div class="field"><label>Username</label><input name="${key}-user" value="${data[key]?.user || ''}" autocomplete="off"></div>
+      <div class="field"><label>Password</label><input name="${key}-pass" type="text" value="${data[key]?.pass || ''}" autocomplete="off"></div>
+    </div>`).join('');
+}
 
-  <dialog id="settingsDialog">
-    <div class="dialog-head">
-      <div><div class="eyebrow">PREFERENCES</div><h2>Local setup</h2></div>
-      <button class="close" data-close>×</button>
-    </div>
-    <form id="credentialForm">
-      <div id="formFields"></div>
-      <button class="save-button" type="submit">Save to this browser <span>↗</span></button>
-    </form>
-  </dialog>
+function setupTiltCards() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('[data-tilt]').forEach((card) => {
+    card.addEventListener('pointermove', (event) => {
+      const rect = card.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      card.style.transform = `perspective(1000px) rotateX(${(0.5 - y) * 10}deg) rotateY(${(x - 0.5) * 10}deg) translateY(-4px)`;
+    });
+    card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+  });
+}
 
-  <div class="toast" id="toast">Copied to clipboard</div>
-  <script src="app.js"></script>
-</body>
-</html>
+function clock() {
+  const time = new Date();
+  $('#clock').textContent = `${time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} LOCAL TIME`;
+}
+
+$('#vaultBtn').addEventListener('click', () => { $('#vaultDialog').showModal(); renderVault(); });
+$('#settingsBtn').addEventListener('click', () => { $('#settingsDialog').showModal(); renderForm(); });
+$('#editCredentials').addEventListener('click', () => { $('#vaultDialog').close(); $('#settingsDialog').showModal(); renderForm(); });
+document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', () => copy(button.dataset.copy)));
+
+$('#credentialForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const output = {};
+  Object.keys(devices).forEach((key) => { output[key] = { user: formData.get(`${key}-user`), pass: formData.get(`${key}-pass`) }; });
+  localStorage.setItem('wifiCtrlCredentials', JSON.stringify(output));
+  $('#settingsDialog').close();
+  notify('Saved locally');
+});
+
+clock();
+setInterval(clock, 1000);
+setupTiltCards();
+window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); deferredPrompt = event; $('#installBtn').hidden = false; });
+$('#installBtn').addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; } });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
